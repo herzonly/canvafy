@@ -4,8 +4,14 @@ const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
 
 module.exports = class WelcomeLeave {
   constructor(options) {
-    this.font = { name: options?.font?.name ?? "Poppins", path: options?.font?.path };
-    this.emojiFont = { name: "NotoColorEmoji", path: options?.emojiFont?.path };
+    this.font = { 
+      name: options?.font?.name ?? "Poppins", 
+      path: options?.font?.path ?? "./assets/fonts/Poppins/Poppins-Regular.ttf" 
+    };
+    this.emojiFont = { 
+      name: "NotoColorEmoji", 
+      path: options?.emojiFont?.path ?? "./assets/fonts/NotoColorEmoji.ttf" 
+    };
     this.avatar = "https://cdn.discordapp.com/embed/avatars/0.png";
     this.background = {
       type: "color",
@@ -130,29 +136,41 @@ module.exports = class WelcomeLeave {
   }
 
   async build() {
-    if (this.font.path) GlobalFonts.registerFromPath(this.font.path, this.font.name);
+    // Register Poppins fonts dari assets
+    try {
+      if (this.font.path) GlobalFonts.registerFromPath(this.font.path, this.font.name);
+    } catch (err) {
+      console.warn('Poppins font not found, using default');
+    }
 
+    // Register emoji font dengan fallback
+    let emojiFontName = 'NotoColorEmoji';
     if (this.emojiFont.path) {
-      GlobalFonts.registerFromPath(this.emojiFont.path, this.emojiFont.name);
-    } else {
       try {
-        GlobalFonts.registerFromPath('./fonts/NotoColorEmoji.ttf', 'NotoColorEmoji');
+        GlobalFonts.registerFromPath(this.emojiFont.path, this.emojiFont.name);
+        emojiFontName = this.emojiFont.name;
       } catch {
+        // Try alternative emoji fonts
         try {
-          GlobalFonts.registerFromPath('/System/Library/Fonts/Apple Color Emoji.ttc', 'AppleColorEmoji');
-          this.emojiFont.name = 'AppleColorEmoji';
+          GlobalFonts.registerFromPath('./assets/fonts/NotoColorEmoji.ttf', 'NotoColorEmoji');
         } catch {
           try {
-            GlobalFonts.registerFromPath('/Windows/Fonts/seguiemj.ttf', 'SegoeUIEmoji');
-            this.emojiFont.name = 'SegoeUIEmoji';
+            GlobalFonts.registerFromPath('/System/Library/Fonts/Apple Color Emoji.ttc', 'AppleColorEmoji');
+            emojiFontName = 'AppleColorEmoji';
           } catch {
-            console.warn('No emoji font found, emojis may not render correctly');
+            try {
+              GlobalFonts.registerFromPath('/Windows/Fonts/seguiemj.ttf', 'SegoeUIEmoji');
+              emojiFontName = 'SegoeUIEmoji';
+            } catch {
+              console.warn('No emoji font found, emojis may not render correctly');
+              emojiFontName = 'sans-serif';
+            }
           }
         }
       }
     }
 
-    const fontStack = `${this.font.name}, ${this.emojiFont.name}, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+    const fontStack = `${this.font.name}, ${emojiFontName}, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
 
     const canvas = createCanvas(700, 350);
     const ctx = canvas.getContext("2d");
