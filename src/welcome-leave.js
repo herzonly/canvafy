@@ -212,7 +212,7 @@ module.exports = class WelcomeLeave {
       throw error;
     }
   }
-   * @param {string} text Title
+  /** * @param {string} text Title
    * @param {string} color "hexcolor"
    * @returns {WelcomeLeave}
    * @example setTitle("fivesobes")
