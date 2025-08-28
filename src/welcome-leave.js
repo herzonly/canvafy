@@ -16,7 +16,7 @@ module.exports = class WelcomeLeave {
     this.title = {
       data: "Welcome",
       color: "#fff",
-      size: 36
+      size: 32
     };
     this.description = {
       data: "Welcome to this server, go read the rules please!",
@@ -302,24 +302,24 @@ module.exports = class WelcomeLeave {
       // Check if description contains emoji
       const descEmojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu;
       if (descEmojiRegex.test(texts[0]) || descEmojiRegex.test(texts[1])) {
-        await this.drawTextWithEmoji(ctx, texts[0], canvas.width / 2, 260, this.description.size, this.description.color, 'center');
-        await this.drawTextWithEmoji(ctx, texts[1], canvas.width / 2, 290, this.description.size, this.description.color, 'center');
+        await this.drawTextWithEmoji(ctx, texts[0], canvas.width / 2, 255, this.description.size, this.description.color, 'center');
+        await this.drawTextWithEmoji(ctx, texts[1], canvas.width / 2, 285, this.description.size, this.description.color, 'center');
       } else {
         ctx.font = `regular ${this.description.size}px ${this.font.name}`;
         ctx.fillStyle = this.description.color;
         ctx.textAlign = "center";
-        ctx.fillText(texts[0], canvas.width / 2, 260);
-        ctx.fillText(texts[1], canvas.width / 2, 290);
+        ctx.fillText(texts[0], canvas.width / 2, 255);
+        ctx.fillText(texts[1], canvas.width / 2, 285);
       }
     } else {
       const descEmojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu;
       if (descEmojiRegex.test(this.description.data)) {
-        await this.drawTextWithEmoji(ctx, this.description.data, canvas.width / 2, 270, this.description.size, this.description.color, 'center');
+        await this.drawTextWithEmoji(ctx, this.description.data, canvas.width / 2, 265, this.description.size, this.description.color, 'center');
       } else {
         ctx.font = `regular ${this.description.size}px ${this.font.name}`;
         ctx.fillStyle = this.description.color;
         ctx.textAlign = "center";
-        ctx.fillText(this.description.data, canvas.width / 2, 270);
+        ctx.fillText(this.description.data, canvas.width / 2, 265);
       }
     }
 
