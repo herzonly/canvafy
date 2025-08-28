@@ -3,6 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
 const { fillTextWithTwemoji } = require('node-canvas-with-twemoji');
 
+/**
+ * @typedef {object} WelcomeLeave
+ * @see {WelcomeLeave}
+ * @example const welcomeCard = await new canvafy.WelcomeLeave()
+ * @example const leaveCard = await new canvafy.WelcomeLeave()
+ * @type {Class}
+ */
 module.exports = class WelcomeLeave {
   constructor(options) {
     this.font = { 
@@ -29,11 +36,23 @@ module.exports = class WelcomeLeave {
     this.avatar_border = "#2a2e35";
   }
 
+  /**
+   * .setAvatar
+   * @param {string} image Set User Avatar URL
+   * @returns {WelcomeLeave}
+   * @example setAvatar("https://someone-image.png")
+   */
   setAvatar(image) {
     this.avatar = image;
     return this;
   }
 
+  /**
+   * .setAvatarBorder
+   * @param {string} color Set Avatar Avatar Border Color
+   * @returns {WelcomeLeave}
+   * @example setAvatarBorder("#fff")
+   */
   setAvatarBorder(color) {
     if (color) {
       if (/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(color)) {
@@ -47,6 +66,14 @@ module.exports = class WelcomeLeave {
     }
   }
 
+  /**
+   * .setBackground
+   * @param {string} type "image" or "color"
+   * @param {string|Buffer|Image} value "url" or "hexcolor"
+   * @returns {WelcomeLeave}
+   * @example setBackground("image","https://someone-image.png")
+   * @example setBackground("color","#000")
+   */
   setBackground(type, value) {
     if (type === 'color') {
       if (value) {
@@ -73,6 +100,12 @@ module.exports = class WelcomeLeave {
     }
   }
 
+  /**
+   * .setBorder
+   * @param {string} color "hexcolor"
+   * @returns {WelcomeLeave}
+   * @example setBorder("#fff")
+   */
   setBorder(color) {
     if (color) {
       if (/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(color)) {
@@ -86,6 +119,13 @@ module.exports = class WelcomeLeave {
     }
   }
 
+  /**
+   * .setDescription
+   * @param {string} text Description
+   * @param {string} color "hexcolor"
+   * @returns {WelcomeLeave}
+   * @example setDescription("Welcome to Server.")
+   */
   setDescription(text, color = "#a7b9c5") {
     if (text) {
       if (text.length > 80) throw new Error("The maximum size of the description is 80 characters.");
@@ -101,6 +141,12 @@ module.exports = class WelcomeLeave {
     return this;
   }
 
+  /**
+   * .setOverlayOpacity
+   * @param {number} opacity must be between 0 and 1
+   * @returns {WelcomeLeave}
+   * @example setOverlayOpacity(0.6)
+   */
   setOverlayOpacity(opacity = 0) {
     if (opacity) {
       if (opacity >= 0 && opacity <= 1) {
@@ -110,6 +156,29 @@ module.exports = class WelcomeLeave {
         throw new Error("The value of the opacity of setOverlayOpacity method must be between 0 and 1 (0 and 1 included).");
       }
     }
+    return this;
+  }
+
+  /**
+   * .setTitle
+   * @param {string} text Title
+   * @param {string} color "hexcolor"
+   * @returns {WelcomeLeave}
+   * @example setTitle("fivesobes")
+   */
+  setTitle(text, color = "#fff") {
+    if (text) {
+      if (text.length > 20) throw new Error("The maximum size of the title is 20 characters.");
+      this.title.data = text;
+      if (color) {
+        if (/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(color)) {
+          this.title.color = color;
+        }
+      }
+    } else {
+      throw new Error("You must give a text as the first argument of setDescription method.");
+    }
+    return this;
   }
 
   async build() {
