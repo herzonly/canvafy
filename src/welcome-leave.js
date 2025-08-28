@@ -1,16 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const { createCanvas, loadImage, GlobalFonts } = require('node-canvas-with-twemoji-and-discord-emoji');
+const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
+const { fillTextWithTwemoji } = require('node-canvas-with-twemoji-and-discord-emoji');
 
 module.exports = class WelcomeLeave {
   constructor(options) {
     this.font = { 
       name: options?.font?.name ?? "Poppins", 
       path: options?.font?.path ?? "./assets/fonts/Poppins/Poppins-Regular.ttf" 
-    };
-    this.emojiFont = { 
-      name: "TwemojiMozilla", 
-      path: options?.emojiFont?.path ?? "./assets/fonts/TwemojiMozilla.ttf" 
     };
     this.avatar = "https://cdn.discordapp.com/embed/avatars/0.png";
     this.background = {
@@ -130,13 +127,7 @@ module.exports = class WelcomeLeave {
     return this;
   }
 
-  registerEmojiFont(path) {
-    this.emojiFont.path = path;
-    return this;
-  }
-
   async build() {
-    // Register Poppins font
     if (this.font.path) {
       try {
         GlobalFonts.registerFromPath(this.font.path, this.font.name);
@@ -213,7 +204,7 @@ module.exports = class WelcomeLeave {
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.title.color;
     ctx.textAlign = "center";
-    ctx.fillText(this.title.data, canvas.width / 2, 225);
+    await fillTextWithTwemoji(ctx, this.title.data, canvas.width / 2, 225);
 
     ctx.font = `regular ${this.description.size}px ${this.font.name}`;
     ctx.globalAlpha = 1;
@@ -236,10 +227,10 @@ module.exports = class WelcomeLeave {
         array[1] = array[1].join(" ");
         return array;
       })(this.description.data);
-      ctx.fillText(texts[0], canvas.width / 2, 260);
-      ctx.fillText(texts[1], canvas.width / 2, 295);
+      await fillTextWithTwemoji(ctx, texts[0], canvas.width / 2, 260);
+      await fillTextWithTwemoji(ctx, texts[1], canvas.width / 2, 295);
     } else {
-      ctx.fillText(this.description.data, canvas.width / 2, 260);
+      await fillTextWithTwemoji(ctx, this.description.data, canvas.width / 2, 260);
     }
 
     ctx.beginPath();
