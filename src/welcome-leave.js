@@ -9,8 +9,8 @@ module.exports = class WelcomeLeave {
       path: options?.font?.path ?? "./assets/fonts/Poppins/Poppins-Regular.ttf" 
     };
     this.emojiFont = { 
-      name: "NotoColorEmoji", 
-      path: options?.emojiFont?.path ?? "./assets/fonts/NotoColorEmoji.ttf" 
+      name: "TwemojiMozilla", 
+      path: options?.emojiFont?.path ?? "./assets/fonts/TwemojiMozilla.ttf" 
     };
     this.avatar = "https://cdn.discordapp.com/embed/avatars/0.png";
     this.background = {
@@ -142,39 +142,51 @@ module.exports = class WelcomeLeave {
     } catch (err) {
       console.warn('Poppins font not found, using default');
     }
-
-    // Register emoji font dengan fallback
+    
+    // Register emoji font dengan fallback yang lebih baik
     let emojiFontName = 'NotoColorEmoji';
     if (this.emojiFont.path) {
       try {
         GlobalFonts.registerFromPath(this.emojiFont.path, this.emojiFont.name);
         emojiFontName = this.emojiFont.name;
       } catch {
-        // Try alternative emoji fonts
-        try {
-          GlobalFonts.registerFromPath('./assets/fonts/NotoColorEmoji.ttf', 'NotoColorEmoji');
-        } catch {
-          try {
-            GlobalFonts.registerFromPath('/System/Library/Fonts/Apple Color Emoji.ttc', 'AppleColorEmoji');
-            emojiFontName = 'AppleColorEmoji';
-          } catch {
-            try {
-              GlobalFonts.registerFromPath('/Windows/Fonts/seguiemj.ttf', 'SegoeUIEmoji');
-              emojiFontName = 'SegoeUIEmoji';
-            } catch {
-              console.warn('No emoji font found, emojis may not render correctly');
-              emojiFontName = 'sans-serif';
-            }
-          }
-        }
+        console.warn('Custom emoji font not found, trying alternatives');
       }
     }
+    
+    // Try system emoji fonts
+    const emojiPaths = [
+      { path: './assets/fonts/NotoColorEmoji.ttf', name: 'NotoColorEmoji' },
+      { path: './assets/fonts/NotoColorEmoji-Regular.ttf', name: 'NotoColorEmoji' },
+      { path: './assets/fonts/TwemojiMozilla.ttf', name: 'TwemojiMozilla' },
+      { path: '/System/Library/Fonts/Apple Color Emoji.ttc', name: 'AppleColorEmoji' },
+      { path: 'C:/Windows/Fonts/seguiemj.ttf', name: 'SegoeUIEmoji' },
+      { path: '/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf', name: 'NotoColorEmoji' }
+    ];
+    
+    let emojiRegistered = false;
+    for (const font of emojiPaths) {
+      try {
+        GlobalFonts.registerFromPath(font.path, font.name);
+        emojiFontName = font.name;
+        emojiRegistered = true;
+        break;
+      } catch {
+        continue;
+      }
+    }
+    
+    if (!emojiRegistered) {
+      console.warn('No color emoji font found. Emojis may display as text fallback');
+      emojiFontName = 'sans-serif';
+    }
 
-    const fontStack = `${this.font.name}, ${emojiFontName}, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+    // Font stack prioritas untuk emoji yang benar
+    const fontStack = `${this.font.name}, ${emojiFontName}, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Twemoji Mozilla", "Android Emoji", "EmojiSymbols", sans-serif`;
 
     const canvas = createCanvas(700, 350);
     const ctx = canvas.getContext("2d");
-
+    
     if(this.border){
       ctx.beginPath();
       ctx.lineWidth = 8;
@@ -192,7 +204,7 @@ module.exports = class WelcomeLeave {
       ctx.stroke();
       ctx.closePath();
     }
-
+    
     ctx.beginPath();
     ctx.moveTo(65, 25);
     ctx.lineTo(canvas.width - 65, 25);
