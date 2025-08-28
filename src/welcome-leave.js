@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
+const { createCanvas, loadImage, registerFont } = require('canvas');
 const { fillTextWithTwemoji } = require('node-canvas-with-twemoji');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * @typedef {object} WelcomeLeave
@@ -182,17 +184,19 @@ module.exports = class WelcomeLeave {
   }
 
   async build() {
-    if (this.font.path) {
+    // Register font using canvas registerFont method
+    if (this.font.path && fs.existsSync(this.font.path)) {
       try {
-        GlobalFonts.registerFromPath(this.font.path, this.font.name);
+        registerFont(this.font.path, { family: this.font.name });
       } catch (err) {
-        console.warn('Font not found, using default');
+        console.warn('Font not found or could not be registered, using default font');
       }
     }
 
     const canvas = createCanvas(700, 350);
     const ctx = canvas.getContext("2d");
     
+    // Draw border if set
     if(this.border){
       ctx.beginPath();
       ctx.lineWidth = 8;
@@ -211,6 +215,7 @@ module.exports = class WelcomeLeave {
       ctx.closePath();
     }
     
+    // Create main rounded rectangle path for clipping
     ctx.beginPath();
     ctx.moveTo(65, 25);
     ctx.lineTo(canvas.width - 65, 25);
@@ -227,18 +232,21 @@ module.exports = class WelcomeLeave {
 
     ctx.globalAlpha = 1;
 
+    // Draw background
     if (this.background.type === "color") {
       ctx.beginPath();
       ctx.fillStyle = this.background.background;
       ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20)
     } else if (this.background.type === "image") {
       try {
-        ctx.drawImage(await loadImage(this.background.background), 10, 10, canvas.width - 20, canvas.height - 20);
-      } catch {
+        const backgroundImage = await loadImage(this.background.background);
+        ctx.drawImage(backgroundImage, 10, 10, canvas.width - 20, canvas.height - 20);
+      } catch (error) {
         throw new Error("The image given in the second parameter of the setBackground method is not valid or you are not connected to the internet.");
       }
     }
 
+    // Draw overlay
     ctx.beginPath();
     ctx.globalAlpha = this.overlay_opacity;
     ctx.fillStyle = "#000";
@@ -254,6 +262,7 @@ module.exports = class WelcomeLeave {
     ctx.fill();
     ctx.closePath();
 
+    // Draw title with emoji support
     ctx.font = `bold ${this.title.size}px ${this.font.name}`;
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.title.color;
@@ -261,7 +270,8 @@ module.exports = class WelcomeLeave {
     
     await fillTextWithTwemoji(ctx, this.title.data, canvas.width / 2, 225);
 
-    ctx.font = `regular ${this.description.size}px ${this.font.name}`;
+    // Draw description with emoji support
+    ctx.font = `${this.description.size}px ${this.font.name}`;
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.description.color;
     ctx.textAlign = "center";
@@ -289,6 +299,7 @@ module.exports = class WelcomeLeave {
       await fillTextWithTwemoji(ctx, this.description.data, canvas.width / 2, 260);
     }
 
+    // Draw avatar border
     ctx.beginPath();
     ctx.globalAlpha = 1;
     ctx.lineWidth = 5;
@@ -297,14 +308,17 @@ module.exports = class WelcomeLeave {
     ctx.stroke();
     ctx.closePath();
 
+    // Create circular clipping path for avatar
     ctx.beginPath();
     ctx.arc(canvas.width / 2, 125, 60, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip(); 
 
+    // Draw avatar
     try {
-      ctx.drawImage(await loadImage(this.avatar), canvas.width / 2 - 60, 65, 120, 120);
-    } catch {
+      const avatarImage = await loadImage(this.avatar);
+      ctx.drawImage(avatarImage, canvas.width / 2 - 60, 65, 120, 120);
+    } catch (error) {
       throw new Error("The image given in the argument of the setAvatar method is not valid or you are not connected to the internet.");
     }
 
