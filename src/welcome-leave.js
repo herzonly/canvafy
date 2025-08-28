@@ -203,13 +203,19 @@ module.exports = class WelcomeLeave {
     ctx.font = `bold ${this.title.size}px ${this.font.name}`;
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.title.color;
-    ctx.textAlign = "center";
-    await fillTextWithTwemoji(ctx, this.title.data, canvas.width / 2, 225);
+    ctx.textAlign = "start";
+    ctx.textBaseline = "middle";
+    
+    const titleWidth = ctx.measureText(this.title.data).width;
+    const titleX = (canvas.width - titleWidth) / 2;
+    
+    await fillTextWithTwemoji(ctx, this.title.data, titleX, 225);
 
     ctx.font = `regular ${this.description.size}px ${this.font.name}`;
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.description.color;
-    ctx.textAlign = "center";
+    ctx.textAlign = "start";
+    ctx.textBaseline = "middle";
 
     if (this.description.data.length > 35) {
       const texts = (function (string) {
@@ -227,10 +233,18 @@ module.exports = class WelcomeLeave {
         array[1] = array[1].join(" ");
         return array;
       })(this.description.data);
-      await fillTextWithTwemoji(ctx, texts[0], canvas.width / 2, 260);
-      await fillTextWithTwemoji(ctx, texts[1], canvas.width / 2, 295);
+      
+      const text1Width = ctx.measureText(texts[0]).width;
+      const text2Width = ctx.measureText(texts[1]).width;
+      const text1X = (canvas.width - text1Width) / 2;
+      const text2X = (canvas.width - text2Width) / 2;
+      
+      await fillTextWithTwemoji(ctx, texts[0], text1X, 260);
+      await fillTextWithTwemoji(ctx, texts[1], text2X, 295);
     } else {
-      await fillTextWithTwemoji(ctx, this.description.data, canvas.width / 2, 260);
+      const textWidth = ctx.measureText(this.description.data).width;
+      const textX = (canvas.width - textWidth) / 2;
+      await fillTextWithTwemoji(ctx, this.description.data, textX, 260);
     }
 
     ctx.beginPath();
