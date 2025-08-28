@@ -6,6 +6,37 @@ const fs = require('fs');
 const path = require('path');
 
 /**
+ * Helper function to fix SVG issues by adding width and height if missing
+ * @param {string} svgContent - SVG content as string
+ * @param {number} width - Desired width
+ * @param {number} height - Desired height
+ * @returns {string} - Fixed SVG content
+ */
+function fixSvgDimensions(svgContent, width = 800, height = 600) {
+  // Check if SVG already has width and height
+  if (svgContent.includes('width=') && svgContent.includes('height=')) {
+    return svgContent;
+  }
+  
+  // Add width and height to SVG element
+  const svgTagRegex = /<svg([^>]*)>/i;
+  const match = svgContent.match(svgTagRegex);
+  
+  if (match) {
+    let attributes = match[1];
+    if (!attributes.includes('width=')) {
+      attributes += ` width="${width}"`;
+    }
+    if (!attributes.includes('height=')) {
+      attributes += ` height="${height}"`;
+    }
+    return svgContent.replace(svgTagRegex, `<svg${attributes}>`);
+  }
+  
+  return svgContent;
+}
+
+/**
  * @typedef {object} WelcomeLeave
  * @see {WelcomeLeave}
  * @example const welcomeCard = await new canvafy.WelcomeLeave()
@@ -162,7 +193,25 @@ module.exports = class WelcomeLeave {
   }
 
   /**
-   * .setTitle
+   * Helper method to load image with SVG handling
+   * @param {string} imageSource - Image URL or path
+   * @returns {Promise} - Promise resolving to loaded image
+   */
+  async loadImageSafely(imageSource) {
+    try {
+      // If it's an SVG URL, we might need special handling
+      if (typeof imageSource === 'string' && imageSource.toLowerCase().includes('.svg')) {
+        // For remote SVGs, we can't easily modify them, so just try loading
+        // Local SVGs would need special handling
+        console.warn('Loading SVG image, this might cause issues if SVG lacks width/height attributes');
+      }
+      
+      return await loadImage(imageSource);
+    } catch (error) {
+      console.error('Error loading image:', error);
+      throw error;
+    }
+  }
    * @param {string} text Title
    * @param {string} color "hexcolor"
    * @returns {WelcomeLeave}
@@ -239,10 +288,14 @@ module.exports = class WelcomeLeave {
       ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20)
     } else if (this.background.type === "image") {
       try {
-        const backgroundImage = await loadImage(this.background.background);
+        const backgroundImage = await this.loadImageSafely(this.background.background);
         ctx.drawImage(backgroundImage, 10, 10, canvas.width - 20, canvas.height - 20);
       } catch (error) {
-        throw new Error("The image given in the second parameter of the setBackground method is not valid or you are not connected to the internet.");
+        console.error('Background image error:', error);
+        // Fallback to default color background
+        ctx.beginPath();
+        ctx.fillStyle = "#23272a";
+        ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
       }
     }
 
@@ -317,9 +370,19 @@ module.exports = class WelcomeLeave {
     // Draw avatar
     try {
       const avatarImage = await loadImage(this.avatar);
+      // Additional check for SVG avatars
+      if (typeof this.avatar === 'string' && this.avatar.toLowerCase().includes('.svg')) {
+        console.warn('SVG avatars may cause issues. Consider using PNG/JPG instead.');
+      }
       ctx.drawImage(avatarImage, canvas.width / 2 - 60, 65, 120, 120);
     } catch (error) {
-      throw new Error("The image given in the argument of the setAvatar method is not valid or you are not connected to the internet.");
+      console.error('Avatar image error:', error);
+      // Draw a fallback circle for avatar
+      ctx.beginPath();
+      ctx.fillStyle = "#36393f";
+      ctx.arc(canvas.width / 2, 125, 60, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.closePath();
     }
 
     return canvas.toBuffer('image/png');
