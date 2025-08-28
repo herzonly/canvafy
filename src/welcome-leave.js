@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
-const { fillTextWithTwemoji } = require('node-canvas-with-twemoji-and-discord-emoji');
+const { fillTextWithTwemoji } = require('node-canvas-with-twemoji');
 
 module.exports = class WelcomeLeave {
   constructor(options) {
@@ -112,21 +112,6 @@ module.exports = class WelcomeLeave {
     }
   }
 
-  setTitle(text, color = "#fff") {
-    if (text) {
-      if (text.length > 20) throw new Error("The maximum size of the title is 20 characters.");
-      this.title.data = text;
-      if (color) {
-        if (/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(color)) {
-          this.title.color = color;
-        }
-      }
-    } else {
-      throw new Error("You must give a text as the first argument of setDescription method.");
-    }
-    return this;
-  }
-
   async build() {
     if (this.font.path) {
       try {
@@ -203,19 +188,14 @@ module.exports = class WelcomeLeave {
     ctx.font = `bold ${this.title.size}px ${this.font.name}`;
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.title.color;
-    ctx.textAlign = "start";
-    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
     
-    const titleWidth = ctx.measureText(this.title.data).width;
-    const titleX = (canvas.width - titleWidth) / 2;
-    
-    await fillTextWithTwemoji(ctx, this.title.data, titleX, 225);
+    await fillTextWithTwemoji(ctx, this.title.data, canvas.width / 2, 225);
 
     ctx.font = `regular ${this.description.size}px ${this.font.name}`;
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.description.color;
-    ctx.textAlign = "start";
-    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
 
     if (this.description.data.length > 35) {
       const texts = (function (string) {
@@ -234,17 +214,10 @@ module.exports = class WelcomeLeave {
         return array;
       })(this.description.data);
       
-      const text1Width = ctx.measureText(texts[0]).width;
-      const text2Width = ctx.measureText(texts[1]).width;
-      const text1X = (canvas.width - text1Width) / 2;
-      const text2X = (canvas.width - text2Width) / 2;
-      
-      await fillTextWithTwemoji(ctx, texts[0], text1X, 260);
-      await fillTextWithTwemoji(ctx, texts[1], text2X, 295);
+      await fillTextWithTwemoji(ctx, texts[0], canvas.width / 2, 260);
+      await fillTextWithTwemoji(ctx, texts[1], canvas.width / 2, 295);
     } else {
-      const textWidth = ctx.measureText(this.description.data).width;
-      const textX = (canvas.width - textWidth) / 2;
-      await fillTextWithTwemoji(ctx, this.description.data, textX, 260);
+      await fillTextWithTwemoji(ctx, this.description.data, canvas.width / 2, 260);
     }
 
     ctx.beginPath();
