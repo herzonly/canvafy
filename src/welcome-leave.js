@@ -1,7 +1,6 @@
 "use strict";
 
 const { createCanvas, loadImage, registerFont } = require('canvas');
-const twemoji = require('twemoji');
 
 module.exports = class WelcomeLeave {
   constructor(options) {
@@ -129,11 +128,10 @@ module.exports = class WelcomeLeave {
     return this;
   }
 
-  parseEmoji(emoji) {
-    return twemoji.parse(emoji, {
-      folder: 'svg',
-      ext: '.svg'
-    }).match(/src="([^"]+)"/)?.[1];
+  getEmojiCodePoint(emoji) {
+    return Array.from(emoji).map(char => 
+      char.codePointAt(0).toString(16)
+    ).join('-');
   }
 
   async loadEmojiImage(emojiChar) {
@@ -142,67 +140,57 @@ module.exports = class WelcomeLeave {
     }
 
     try {
-      const emojiUrl = this.parseEmoji(emojiChar);
-      if (emojiUrl) {
-        const emojiImage = await loadImage(emojiUrl);
-        this.emojiCache.set(emojiChar, emojiImage);
-        return emojiImage;
-      }
+      const codePoint = this.getEmojiCodePoint(emojiChar);
+      const emojiUrl = `https://twemoji.maxcdn.com/v/latest/72x72/${codePoint}.png`;
+      
+      const emojiImage = await loadImage(emojiUrl);
+      this.emojiCache.set(emojiChar, emojiImage);
+      return emojiImage;
     } catch (error) {
-      console.warn(`Failed to load emoji ${emojiChar}:`, error.message);
+      return null;
     }
-    return null;
   }
 
   async drawTextWithEmoji(ctx, text, x, y, fontSize, color, align = 'center') {
-    ctx.font = `${fontSize}px ${this.font.name}`;
+    ctx.font = `bold ${fontSize}px ${this.font.name}`;
     ctx.fillStyle = color;
     ctx.textAlign = align;
 
-    const emojiRegex = /([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F018}-\u{1F0F5}])/gu;
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu;
     
-    const parts = text.split(emojiRegex);
-    let currentX = x;
-    
-    if (align === 'center') {
-      const totalWidth = await this.measureTextWithEmoji(ctx, text, fontSize);
-      currentX = x - totalWidth / 2;
+    if (!emojiRegex.test(text)) {
+      ctx.fillText(text, x, y);
+      return;
     }
 
-    for (const part of parts) {
-      if (part.match(emojiRegex)) {
-        const emojiImage = await this.loadEmojiImage(part);
-        if (emojiImage) {
-          const emojiSize = fontSize * 1.2;
-          ctx.drawImage(emojiImage, currentX, y - emojiSize + fontSize * 0.2, emojiSize, emojiSize);
-          currentX += emojiSize;
-        } else {
-          ctx.fillText(part, currentX, y);
-          currentX += ctx.measureText(part).width;
-        }
-      } else if (part) {
-        ctx.fillText(part, currentX, y);
-        currentX += ctx.measureText(part).width;
-      }
-    }
-  }
-
-  async measureTextWithEmoji(ctx, text, fontSize) {
-    ctx.font = `${fontSize}px ${this.font.name}`;
-    const emojiRegex = /([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F018}-\u{1F0F5}])/gu;
-    
-    const parts = text.split(emojiRegex);
+    const parts = text.split(emojiRegex).filter(part => part !== '');
     let totalWidth = 0;
-
+    
     for (const part of parts) {
-      if (part.match(emojiRegex)) {
-        totalWidth += fontSize * 1.2;
-      } else if (part) {
+      if (emojiRegex.test(part)) {
+        totalWidth += fontSize;
+      } else {
         totalWidth += ctx.measureText(part).width;
       }
     }
 
-    return totalWidth;
+    let currentX = align === 'center' ? x - totalWidth / 2 : x;
+
+    for (const part of parts) {
+      if (emojiRegex.test(part)) {
+        const emojiImage = await this.loadEmojiImage(part);
+        if (emojiImage) {
+          ctx.drawImage(emojiImage, currentX, y - fontSize * 0.8, fontSize, fontSize);
+          currentX += fontSize;
+        } else {
+          ctx.fillText(part, currentX, y);
+          currentX += ctx.measureText(part).width;
+        }
+      } else if (part.trim()) {
+        ctx.fillText(part, currentX, y);
+        currentX += ctx.measureText(part).width;
+      }
+    }
   }
 
   async build() {
