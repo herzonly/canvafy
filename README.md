@@ -2,9 +2,9 @@
 <img src="https://raw.githubusercontent.com/herzonly/canvafy/refs/heads/main/%2B_20250829_094824_0000.png" width="600px" alt="stats" align="center">
 <h6/>
 <p align="center"><a href="https://nodei.co/npm/canvafy/"><img src="https://nodei.co/npm/canvafy.png"></a></p>
-<p align="center"><img src="https://img.shields.io/npm/v/canvafy?style=for-the-badge"> <img src="https://img.shields.io/npm/l/hercai?style=for-the-badge"> <img src="https://img.shields.io/npm/dt/canvafy?style=for-the-badge"> <a href="https://discord.gg/luppux" target="_blank"> <img alt="Discord" src="https://img.shields.io/badge/Support-Click%20here-7289d9?style=for-the-badge&logo=discord"> </a> <a href="https://www.buymeacoffee.com/beykant" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="120px" height="30px" alt="Buy Me A Coffee"></a></p>
+<p align="center"><img src="https://img.shields.io/npm/v/@justherza/canvafy?style=for-the-badge"> <img src="https://img.shields.io/npm/l/hercai?style=for-the-badge"> <img src="https://img.shields.io/npm/dt/@justherza?style=for-the-badge"> <a href="https://discord.gg/luppux" target="_blank"> <img alt="Discord" src="https://img.shields.io/badge/Support-Click%20here-7289d9?style=for-the-badge&logo=discord"> </a> <a href="https://www.buymeacoffee.com/beykant" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="120px" height="30px" alt="Buy Me A Coffee"></a></p>
 
-  # NOW SUPPORT EMOJI ON WELCOME LEAVE 
+  # NOW SUPPORT EMOJIS ON SOME FEATURE, NEXT UPDATE ADD MORE TO SUPPORT EMOJI
   
 # [![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&color=E600AF&repeat=false&width=435&lines=%F0%9F%93%83+Documents)](#)
 
@@ -102,6 +102,7 @@ See [Document](https://fivesobes.gitbook.io/canvafy/) for Detailed Usage Informa
 [![Discord Banner](https://api.weblutions.com/discord/invite/luppux/)](https://discord.gg/luppux)
 <br> </br>
 <a href="https://www.buymeacoffee.com/beykant" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="120px" height="30px" alt="Buy Me A Coffee"></a>
+
 
 
 
