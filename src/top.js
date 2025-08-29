@@ -1,13 +1,7 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
 
-/**
- * @typedef {object} Top
- * @see {Top}
- * @example const leaderBoardCard = await new canvafy.Top()
- * @type {Class}
- */
+const { createCanvas, loadImage, registerFont } = require('canvas');
+
 module.exports = class Top {
   constructor(options) {
     this.font = { name: options?.font?.name ?? "Poppins", path: options?.font?.path };
@@ -20,14 +14,9 @@ module.exports = class Top {
     this.opacity = 0;
     this.scoreMessage = "";
     this.colors = options?.colors || { box: '#212121', username: '#ffffff', score: '#ffffff', firstRank: '#f7c716', secondRank: '#9e9e9e', thirdRank: '#94610f' };
+    this.emojiCache = new Map();
   }
 
-  /**
-     * .setUsersData
-     * @param {Array||object} usersData [{ top: int, avatar: "string", tag: "string", score: int}]
-     * @returns {Top}
-     * @example setUsersData([{top:1,avatar:"https://someone-image.png",tag:"fivesobes",score:5}])
-     */
   setUsersData(usersData) {
     if(usersData.length > 10){
         throw new Error("setUsersData values cannot be greater than 10.");
@@ -36,35 +25,16 @@ module.exports = class Top {
     return this;
    }
 
-    /**
-     * .setScoreMessage
-     * @param {string} message Set Custom Score Message
-     * @returns {Top}
-     * @example setScoreMessage("Message")
-     */
    setScoreMessage(message) {
     this.scoreMessage = message;
     return this;
    } 
 
-
-   /**
-     * .setColors
-     * @param {object} colors {box: "hexcolor", username: "hexcolor", score: "hexcolor", firstRank: "hexcolor", secondRank: "hexcolor", thirdRank: "hexcolor"}
-     * @returns {Top}
-     * @example setColors({ box: '#212121', username: '#ffffff', score: '#ffffff', firstRank: '#f7c716', secondRank: '#9e9e9e', thirdRank: '#94610f' })
-     */
   setColors(colors) {
     this.colors = colors;
     return this;
    } 
 
-   /**
-     * .setabbreviateNumber
-     * @param {boolean} bool must be "true" or "false"
-     * @returns {Top}
-     * @example setabbreviateNumber(true)
-     */
  setabbreviateNumber(bool){
     if(typeof bool !== "boolean") {
         throw new Error("You must give a abbreviate number true or false argument.");
@@ -73,12 +43,6 @@ module.exports = class Top {
    return this;
  }
 
-    /**
-     * .setOpacity
-     * @param {number} opacity must be between 0 and 1
-     * @returns {Top}
-     * @example setOpacity(0.6)
-     */
  setOpacity(opacity = 0) {
     if (opacity) {
       if (opacity >= 0 && opacity <= 1) {
@@ -90,14 +54,6 @@ module.exports = class Top {
     }
   }
 
-  /**
-     * .setBackground
-     * @param {string} type "image" or "color"
-     * @param {string} value "url" or "hexcolor"
-     * @returns {Top}
-     * @example setBackground("image","https://someone-image.png")
-     * @example setBackground("color","#000")
-     */
   setBackground(type, value) {
     if (type === 'color') {
       if (value) {
@@ -124,11 +80,67 @@ module.exports = class Top {
     }
   }
 
- 
+  getEmojiCodePoint(emoji) {
+    return Array.from(emoji).map(char => 
+      char.codePointAt(0).toString(16)
+    ).join('-');
+  }
+
+  async loadEmojiImage(emojiChar) {
+    if (this.emojiCache.has(emojiChar)) {
+      return this.emojiCache.get(emojiChar);
+    }
+
+    try {
+      const codePoint = this.getEmojiCodePoint(emojiChar);
+      const emojiUrl = `https://twemoji.maxcdn.com/v/latest/72x72/${codePoint}.png`;
+      
+      const emojiImage = await loadImage(emojiUrl);
+      this.emojiCache.set(emojiChar, emojiImage);
+      return emojiImage;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async drawTextWithEmoji(ctx, text, x, y, fontSize, color, font, maxWidth, align = 'left') {
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Extended_Pictographic})/gu;
+    
+    if (!emojiRegex.test(text)) {
+      ctx.fillStyle = color;
+      ctx.font = font;
+      ctx.textAlign = align;
+      ctx.fillText(text, x, y, maxWidth);
+      return;
+    }
+
+    const parts = text.split(emojiRegex).filter(part => part !== '');
+    let currentX = x;
+
+    ctx.fillStyle = color;
+    ctx.font = font;
+
+    for (const part of parts) {
+      if (emojiRegex.test(part)) {
+        const emojiImage = await this.loadEmojiImage(part);
+        if (emojiImage) {
+          ctx.drawImage(emojiImage, currentX, y - fontSize * 0.8, fontSize, fontSize);
+          currentX += fontSize;
+        } else {
+          ctx.fillText(part, currentX, y);
+          currentX += ctx.measureText(part).width;
+        }
+      } else if (part.trim()) {
+        ctx.fillText(part, currentX, y);
+        currentX += ctx.measureText(part).width;
+      }
+    }
+  }
   
   async build() {
-    if (this.font.path) GlobalFonts.registerFromPath(this.font.path, this.font.name);
-
+    if (this.font.path) {
+      registerFont(this.font.path, { family: this.font.name });
+    }
 
     const fillRoundRect=(ctx,x,y,w,h,r,f,s)=>{
     if(typeof r==="number")r={tl:r,tr:r,br:r,bl:r};else {
@@ -148,7 +160,6 @@ module.exports = class Top {
     if(f)ctx.fill();
     if(s)ctx.stroke();}
 
-
     const abbreviateNumber = (value) => {
         var newValue = value;
         if (value >= 1000) {
@@ -166,12 +177,10 @@ module.exports = class Top {
         return newValue;
     }
 
-
     let yuksek = this.usersData.length * 74.5;
 
     const canvas = createCanvas(680, yuksek);
     const ctx = canvas.getContext('2d');
-
 
     ctx.globalAlpha = 1;
 
@@ -186,9 +195,6 @@ module.exports = class Top {
         throw new Error("The image given in the second parameter of the setBackground method is not valid or you are not connected to the internet.");
       }
     }
-
-
-
 
     if(this.usersData) {
         var Box_Y = 0, Avatar_Y = 0, Tag_Y = 45, XP_Y = 45, Level_Y = 30, Rank_Y = 45;
@@ -207,10 +213,7 @@ module.exports = class Top {
             ctx.shadowOffsetY = 6;
             ctx.shadowColor = "#0a0a0a";
             
-            ctx.fillStyle = this.colors.username;
-            ctx.font = `bold 25px ${this.font.name}`;
-            ctx.textAlign = 'left';
-            ctx.fillText(this.usersData[i].tag, 80, Tag_Y, 260);
+            await this.drawTextWithEmoji(ctx, this.usersData[i].tag, 80, Tag_Y, 25, this.colors.username, `bold 25px ${this.font.name}`, 260, 'left');
 
             ctx.fillStyle = this.colors.score;
             ctx.font = `bold 20px ${this.font.name}`;
@@ -252,6 +255,4 @@ module.exports = class Top {
 
     return canvas.toBuffer('image/png');
   }
-
-
 };
