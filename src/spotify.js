@@ -1,16 +1,9 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
+
+const { createCanvas, loadImage, registerFont } = require('canvas');
 const Util = require("../plugins/Util");
 const path = require('path');
 
-
-/**
- * @typedef {object} Spotify
- * @see {Spotify}
- * @example const spotifyCard = await new canvafy.Spotify()
- * @type {Class}
- */
 module.exports = class newSpotify {
   constructor(options) {
     this.font = { name: options?.font?.name ?? "Manrope", path: options?.font?.path };
@@ -26,39 +19,21 @@ module.exports = class newSpotify {
     this.start = null;
     this.spotifyLogo = true;
     this.randomColors = ["#0c0c0c","#121212","#282828","#1c1c1c","#244c66"];
+    this.emojiCache = new Map();
   }
 
-  /**
-   * .setAlbum
-   * @param {string} name Album Name
-   * @returns {Spotify}
-   * @example setAlbum("Alan Walker Album")
-   */
   setAlbum(name) {
     if (!name || typeof name !== "string") throw new Error("The argument of the setAlbum method must be a string.");
     this.album = name;
     return this;
   }
 
-  /**
-   * .setAuthor
-   * @param {string} name Artist Name
-   * @returns {Spotify}
-   * @example setAuthor("Alan Walker, Ava Max")
-   */
   setAuthor(name) {
     if (!name || typeof name !== "string") throw new Error("The argument of the setAuthor method must be a string.");
     this.artist = name;
     return this;
   }
 
-
-  /**
-     * .setBorder
-     * @param {string} color "hexcolor"
-     * @returns {Spotify}
-     * @example setBorder("#fff")
-     */
   setBorder(color) {
     if (color) {
       if (/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(color)) {
@@ -72,13 +47,6 @@ module.exports = class newSpotify {
     }
   }
 
-
-   /**
-     * .setOverlayOpacity
-     * @param {number} opacity must be between 0 and 1
-     * @returns {Spotify}
-     * @example setOverlayOpacity(0.7)
-     */
    setOverlayOpacity(opacity = 0) {
     if (opacity) {
       if (opacity >= 0 && opacity <= 1) {
@@ -90,13 +58,6 @@ module.exports = class newSpotify {
     }
   }
 
-  /**
-     * .setBlur
-     * @param {number} blur setImage blur effect px
-     * @default blur 3
-     * @returns {Spotify}
-     * @example setBlur(5) - Max 15px
-     */
   setBlur(blur = 3) {
     if (blur) {
       if (blur >= 0 && blur <= 15) {
@@ -108,38 +69,18 @@ module.exports = class newSpotify {
     }
   }
 
-  /**
-   * .setImage
-   * @param {string|Buffer|Image} image Album Or Song Image
-   * @returns {Spotify}
-   * @example setImage("https://someone-image.png")
-   */
   setImage(image) {
     if (!image) throw new Error("The argument of the setImage method must be a string or a Buffer or a Canvas.Image.");
     this.image = image;
     return this;
   }
 
-  /**
-   * .setTitle
-   * @param {string} title Title To Set
-   * @returns {Spotify}
-   * @example setTitle("Alone, Pt II")
-   */
   setTitle(title) {
     if (!title || typeof title !== "string") throw new Error("The argument of the setTitle method must be a string.");
     this.title = title;
     return this;
   }
 
-
-  /**
-     * .setSpotifyLogo
-     * @param {boolean} bool must be "true" or "false"
-     * @returns {Spotify}
-     * @default bool true
-     * @example setSpotifyLogo(true)
-     */
  setSpotifyLogo(bool){
   if(typeof bool !== "boolean") {
       throw new Error("You must give a abbreviate number true or false argument.");
@@ -148,13 +89,6 @@ module.exports = class newSpotify {
  return this;
 }
 
-  /**
-   * .setTimestamp
-   * @param {number} start Start Timestamp
-   * @param {number} end End Timestamp
-   * @returns {Spotify}
-   * @example setTimestamp(40000,179000)
-   */
   setTimestamp(start, end) {
     if (!start || typeof start !== "number") throw new Error("The first argument of the setTimestamp method must be a number.");
     if (!end || typeof end !== "number") throw new Error("The first argument of the setTimestamp method must be a number.");
@@ -163,9 +97,74 @@ module.exports = class newSpotify {
     return this;
   }
 
-  /**
-   * @private
-   */
+  getEmojiCodePoint(emoji) {
+    return Array.from(emoji).map(char => 
+      char.codePointAt(0).toString(16)
+    ).join('-');
+  }
+
+  async loadEmojiImage(emojiChar) {
+    if (this.emojiCache.has(emojiChar)) {
+      return this.emojiCache.get(emojiChar);
+    }
+
+    try {
+      const codePoint = this.getEmojiCodePoint(emojiChar);
+      const emojiUrl = `https://twemoji.maxcdn.com/v/latest/72x72/${codePoint}.png`;
+      
+      const emojiImage = await loadImage(emojiUrl);
+      this.emojiCache.set(emojiChar, emojiImage);
+      return emojiImage;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async drawTextWithEmoji(ctx, text, x, y, fontSize, color, font, align = 'center') {
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Extended_Pictographic})/gu;
+    
+    if (!emojiRegex.test(text)) {
+      ctx.fillStyle = color;
+      ctx.font = font;
+      ctx.textAlign = align;
+      ctx.fillText(text, x, y);
+      return;
+    }
+
+    const parts = text.split(emojiRegex).filter(part => part !== '');
+    let totalWidth = 0;
+    
+    ctx.font = font;
+    for (const part of parts) {
+      if (emojiRegex.test(part)) {
+        totalWidth += fontSize * 0.9;
+      } else {
+        totalWidth += ctx.measureText(part).width;
+      }
+    }
+
+    let currentX = align === 'center' ? x - totalWidth / 2 : x;
+
+    ctx.fillStyle = color;
+    ctx.textAlign = 'left';
+
+    for (const part of parts) {
+      if (emojiRegex.test(part)) {
+        const emojiImage = await this.loadEmojiImage(part);
+        if (emojiImage) {
+          ctx.drawImage(emojiImage, currentX, y - fontSize * 0.75, fontSize * 0.9, fontSize * 0.9);
+          currentX += fontSize * 0.9;
+        } else {
+          ctx.fillText(part, currentX, y);
+          currentX += ctx.measureText(part).width;
+        }
+      } else if (part.trim()) {
+        ctx.fillText(part, currentX, y);
+        currentX += ctx.measureText(part).width;
+      }
+    }
+  }
+
   _calcule_progress(current, total) {
     const progress = (current / total) * this._bar_width;
     if (isNaN(progress) || current < 0) {
@@ -183,7 +182,9 @@ module.exports = class newSpotify {
     if (!this.start) throw new Error("Missing 'start' parameter.");
     if (!this.end) throw new Error("Missing 'end' parameter.");
 
-    if (this.font.path) GlobalFonts.registerFromPath(this.font.path, this.font.name);
+    if (this.font.path) {
+      registerFont(this.font.path, { family: this.font.name });
+    }
 
     const start_format = Util.format_time(this.start > this.end ? this.end : this.start);
     const end_format = Util.format_time(this.end);
@@ -191,8 +192,6 @@ module.exports = class newSpotify {
     const canvas = createCanvas(2000, 585);
     const ctx = canvas.getContext("2d");
 
-
-   
     if (this.border) {
       ctx.beginPath();
       ctx.lineWidth = 8;
@@ -240,7 +239,6 @@ module.exports = class newSpotify {
       }
     }
 
-
     ctx.filter = "none";
 
     if(this.overlay_opacity){
@@ -253,7 +251,6 @@ module.exports = class newSpotify {
 
     ctx.globalAlpha = 1;
 
-  
     const progressBar = (ctx, x, y, width, height) => {
       ctx.fillStyle = "#6a625e";
       roundRect(ctx, x, y, width, height, 8, true, false);
@@ -265,7 +262,6 @@ module.exports = class newSpotify {
       ctx.closePath();
     };
 
-
     progressBar(ctx, 300, 400, this._bar_width, 8)
     
     if(this.spotifyLogo){
@@ -275,42 +271,31 @@ module.exports = class newSpotify {
       throw new Error("The image given in the parameter of the Spotify method is not valid or you are not connected to the internet.");
     }
   }
-   
 
-    ctx.fillStyle = "#fff";
-    ctx.font = `bold 50px ${this.font.name}`;
-    ctx.textAlign = "center";
-    ctx.fillText(this.title.length >= 40 ? this.title.slice(0, 40)+"...": this.title, 1000, 285);
+    const titleText = this.title.length >= 40 ? this.title.slice(0, 40)+"...": this.title;
+    await this.drawTextWithEmoji(ctx, titleText, 1000, 285, 50, "#fff", `bold 50px ${this.font.name}`, 'center');
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = `bold 28px ${this.font.name}`;
-    ctx.textAlign = "center";
-    ctx.fillText(`${this.artist.length >= 40 ? this.artist.slice(0, 40)+"...":this.artist}`, 1000, 215);
+    const artistText = this.artist.length >= 40 ? this.artist.slice(0, 40)+"...":this.artist;
+    await this.drawTextWithEmoji(ctx, artistText, 1000, 215, 28, "#94a3b8", `bold 28px ${this.font.name}`, 'center');
 
     if (this.album && typeof this.album === "string") {
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = `regular 30px ${this.font.name}`;
-      ctx.fillText(`${this.album.length >= 40 ? this.album.slice(0, 40)+"...":this.album}`, 1000, 350);
+      const albumText = this.album.length >= 40 ? this.album.slice(0, 40)+"...":this.album;
+      await this.drawTextWithEmoji(ctx, albumText, 1000, 350, 30, "#94a3b8", `regular 30px ${this.font.name}`, 'center');
     }
 
     ctx.fillStyle = "#cbd5e1";
     ctx.font = `"regular 20px ${this.font.name}`
+    ctx.textAlign = "center";
     ctx.fillText(end_format, 1782, 412);
 
     ctx.fillStyle = "#cbd5e1";
     ctx.font = `regular 20px ${this.font.name}`;
+    ctx.textAlign = "center";
     ctx.fillText(start_format, 230, 412);
-
 
     return canvas.toBuffer('image/png');
   }
 }
-
-
-
-
-
-
 
 function roundRect(ctx, x, y, width, height, radius = 5, fill = true, stroke = false) {
   if (typeof radius === "number") {
