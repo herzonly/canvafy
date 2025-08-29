@@ -1,5 +1,5 @@
 <h6 align="center">
-<img src="https://fivesobes.gitbook.io/~gitbook/image?url=https:%2F%2F1203280867-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FQ8KI56rkXEQp2Ao9aeTJ%252Fuploads%252F6uDWc83AS6QOx2RF747L%252FCanvafyxd33.png%3Falt=media%26token=b26598ec-a1b4-41e7-a441-713808dc515f&width=768&dpr=1&quality=100&sign=ef15f2625d0bbe37ec0ee54f16dbc3cad5cf80f9b802a240a3552b14a08bb7f4" width="600px" alt="stats" align="center">
+<img src="https://raw.githubusercontent.com/herzonly/canvafy/refs/heads/main/%2B_20250829_094824_0000.png" width="600px" alt="stats" align="center">
 <h6/>
 <p align="center"><a href="https://nodei.co/npm/canvafy/"><img src="https://nodei.co/npm/canvafy.png"></a></p>
 <p align="center"><img src="https://img.shields.io/npm/v/canvafy?style=for-the-badge"> <img src="https://img.shields.io/npm/l/hercai?style=for-the-badge"> <img src="https://img.shields.io/npm/dt/canvafy?style=for-the-badge"> <a href="https://discord.gg/luppux" target="_blank"> <img alt="Discord" src="https://img.shields.io/badge/Support-Click%20here-7289d9?style=for-the-badge&logo=discord"> </a> <a href="https://www.buymeacoffee.com/beykant" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="120px" height="30px" alt="Buy Me A Coffee"></a></p>
@@ -102,5 +102,6 @@ See [Document](https://fivesobes.gitbook.io/canvafy/) for Detailed Usage Informa
 [![Discord Banner](https://api.weblutions.com/discord/invite/luppux/)](https://discord.gg/luppux)
 <br> </br>
 <a href="https://www.buymeacoffee.com/beykant" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="120px" height="30px" alt="Buy Me A Coffee"></a>
+
 
 
