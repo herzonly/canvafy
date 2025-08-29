@@ -152,10 +152,10 @@ module.exports = class WelcomeLeave {
   }
 
   async drawTextWithEmoji(ctx, text, x, y, fontSize, color, align = 'center') {
-    const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu;
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Extended_Pictographic})/gu;
     
     if (!emojiRegex.test(text)) {
-      ctx.font = `regular ${fontSize}px ${this.font.name}`;
+      ctx.font = `${fontSize}px Arial`;
       ctx.fillStyle = color;
       ctx.textAlign = align;
       ctx.fillText(text, x, y);
@@ -165,10 +165,10 @@ module.exports = class WelcomeLeave {
     const parts = text.split(emojiRegex).filter(part => part !== '');
     let totalWidth = 0;
     
-    ctx.font = `regular ${fontSize}px ${this.font.name}`;
+    ctx.font = `${fontSize}px Arial`;
     for (const part of parts) {
       if (emojiRegex.test(part)) {
-        totalWidth += fontSize;
+        totalWidth += fontSize * 0.9;
       } else {
         totalWidth += ctx.measureText(part).width;
       }
@@ -183,8 +183,8 @@ module.exports = class WelcomeLeave {
       if (emojiRegex.test(part)) {
         const emojiImage = await this.loadEmojiImage(part);
         if (emojiImage) {
-          ctx.drawImage(emojiImage, currentX, y - fontSize * 0.8, fontSize, fontSize);
-          currentX += fontSize;
+          ctx.drawImage(emojiImage, currentX, y - fontSize * 0.75, fontSize * 0.9, fontSize * 0.9);
+          currentX += fontSize * 0.9;
         } else {
           ctx.fillText(part, currentX, y);
           currentX += ctx.measureText(part).width;
@@ -271,7 +271,7 @@ module.exports = class WelcomeLeave {
     ctx.fillStyle = this.title.color;
     ctx.textAlign = "center";
     
-    const titleEmojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/gu;
+    const titleEmojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Extended_Pictographic})/gu;
     if (titleEmojiRegex.test(this.title.data)) {
       await this.drawTextWithEmoji(ctx, this.title.data, canvas.width / 2, 225, this.title.size, this.title.color, 'center');
     } else {
@@ -300,10 +300,21 @@ module.exports = class WelcomeLeave {
         return array;
       })(this.description.data);
       
-      ctx.fillText(texts[0], canvas.width / 2, 260);
-      ctx.fillText(texts[1], canvas.width / 2, 295);
+      const descEmojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Extended_Pictographic})/gu;
+      if (descEmojiRegex.test(texts[0]) || descEmojiRegex.test(texts[1])) {
+        await this.drawTextWithEmoji(ctx, texts[0], canvas.width / 2, 260, this.description.size, this.description.color, 'center');
+        await this.drawTextWithEmoji(ctx, texts[1], canvas.width / 2, 295, this.description.size, this.description.color, 'center');
+      } else {
+        ctx.fillText(texts[0], canvas.width / 2, 260);
+        ctx.fillText(texts[1], canvas.width / 2, 295);
+      }
     } else {
-      ctx.fillText(this.description.data, canvas.width / 2, 260);
+      const descEmojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Extended_Pictographic})/gu;
+      if (descEmojiRegex.test(this.description.data)) {
+        await this.drawTextWithEmoji(ctx, this.description.data, canvas.width / 2, 260, this.description.size, this.description.color, 'center');
+      } else {
+        ctx.fillText(this.description.data, canvas.width / 2, 260);
+      }
     }
 
     ctx.beginPath();
