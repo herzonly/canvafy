@@ -1,14 +1,6 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+
 const { createCanvas, loadImage, registerFont } = require('canvas');
-
-
-/**
- * @typedef {object} Ship
- * @see {Ship}
- * @example const shipCard = await new canvafy.Ship()
- * @type {Class}
- */
 
 module.exports = class Ship {
   constructor(options) {
@@ -22,30 +14,15 @@ module.exports = class Ship {
     };
     this.overlay_opacity = 0;
     this.border;
+    this.emojiCache = new Map();
   }
 
-
-   /**
-     * .setAvatars
-     * @param {string|Buffer|Image} image First Avatar 
-     * @param {string|Buffer|Image} image2 Second Avatar
-     * @returns {Ship}
-     * @example setAvatars("https://someone-image.png","https://someone-image.png")
-     */
   setAvatars(image,image2) {
     this.avatar = image;
     this.avatar2 = image2;
     return this;
   }
 
-    /**
-     * .setBackground
-     * @param {string} type "image" or "color"
-     * @param {string|Buffer|Image} value "url" or "hexcolor"
-     * @returns {Ship}
-     * @example setBackground("image","https://someone-image.png")
-     * @example setBackground("color","#000")
-     */
   setBackground(type, value) {
     if (type === 'color') {
       if (value) {
@@ -72,12 +49,6 @@ module.exports = class Ship {
     }
   }
 
-  /**
-   * .setBorder
-   * @param {string} color "hexcolor"
-   * @returns {Ship}
-   * @example setBorder("#fff")
-   */
   setBorder(color) {
     if (color) {
       if (/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/.test(color)) {
@@ -91,13 +62,6 @@ module.exports = class Ship {
     }
   }
 
-
-    /**
-     * .setOverlayOpacity
-     * @param {number} opacity must be between 0 and 1
-     * @returns {Ship}
-     * @example setOverlayOpacity(0.7)
-     */
   setOverlayOpacity(opacity = 0) {
     if (opacity) {
       if (opacity >= 0 && opacity <= 1) {
@@ -109,12 +73,6 @@ module.exports = class Ship {
     }
   }
 
-    /**
-     * .setCustomNumber
-     * @param {number} num must be between 0 and 100
-     * @returns {Ship}
-     * @example setCustomNumber(65)
-     */ 
   setCustomNumber(num) {
     if(num < 0 || num > 100){
       throw new Error("The value of the setCustomNumber method must be between 0 and 100 (0 and 100 included).");
@@ -123,11 +81,76 @@ module.exports = class Ship {
     return this;
   }
 
+  getEmojiCodePoint(emoji) {
+    return Array.from(emoji).map(char => 
+      char.codePointAt(0).toString(16)
+    ).join('-');
+  }
 
+  async loadEmojiImage(emojiChar) {
+    if (this.emojiCache.has(emojiChar)) {
+      return this.emojiCache.get(emojiChar);
+    }
+
+    try {
+      const codePoint = this.getEmojiCodePoint(emojiChar);
+      const emojiUrl = `https://twemoji.maxcdn.com/v/latest/72x72/${codePoint}.png`;
+      
+      const emojiImage = await loadImage(emojiUrl);
+      this.emojiCache.set(emojiChar, emojiImage);
+      return emojiImage;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async drawTextWithEmoji(ctx, text, x, y, fontSize, color, font, align = 'center') {
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Extended_Pictographic})/gu;
+    
+    if (!emojiRegex.test(text)) {
+      ctx.fillStyle = color;
+      ctx.font = font;
+      ctx.textAlign = align;
+      ctx.fillText(text, x, y);
+      return;
+    }
+
+    const parts = text.split(emojiRegex).filter(part => part !== '');
+    let totalWidth = 0;
+    
+    ctx.font = font;
+    for (const part of parts) {
+      if (emojiRegex.test(part)) {
+        totalWidth += fontSize * 0.9;
+      } else {
+        totalWidth += ctx.measureText(part).width;
+      }
+    }
+
+    let currentX = align === 'center' ? x - totalWidth / 2 : x;
+
+    ctx.fillStyle = color;
+    ctx.textAlign = 'left';
+
+    for (const part of parts) {
+      if (emojiRegex.test(part)) {
+        const emojiImage = await this.loadEmojiImage(part);
+        if (emojiImage) {
+          ctx.drawImage(emojiImage, currentX, y - fontSize * 0.75, fontSize * 0.9, fontSize * 0.9);
+          currentX += fontSize * 0.9;
+        } else {
+          ctx.fillText(part, currentX, y);
+          currentX += ctx.measureText(part).width;
+        }
+      } else if (part.trim()) {
+        ctx.fillText(part, currentX, y);
+        currentX += ctx.measureText(part).width;
+      }
+    }
+  }
 
   async build() {
     if (this.font.path) registerFont(this.font.path, {family:this.font.name});
-
 
     let sayı = this.number;
 
@@ -194,7 +217,6 @@ module.exports = class Ship {
     ctx.fill();
     ctx.closePath();
 
-
 var x = (700/2) - (150/2);
 var y = (350/2) - (150/2);
 
@@ -226,7 +248,6 @@ if(sayı >= 10 && sayı < 20) doluluk = 370
 if(sayı >= 5 && sayı < 10) doluluk = 385
 if(sayı >= 0 && sayı < 5) doluluk = 399
 
-
 ctx.globalAlpha = 0.6;
 var gradient = ctx.createLinearGradient(0, y, 0, doluluk);
 gradient.addColorStop(0, "#ffffff");
@@ -239,8 +260,6 @@ ctx.shadowColor = "#ff0000";
 ctx.shadowOffsetY = 0;
 ctx.shadowOffsetX = 0;
 ctx.fill();
-
-
 
  ctx.fillStyle = `WHITE`;
  ctx.font = `bold 36px Sans`;
